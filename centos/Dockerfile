@@ -21,7 +21,8 @@ ENV ENV_CONTROLLER_LOCATION=$LOCATION
 # Download certificate (nginx-repo.crt) and key (nginx-repo.key) from the customer portal (https://cs.nginx.com)
 # and copy to the build context
 COPY nginx-repo.* /etc/ssl/nginx/
-COPY nginx-plus-api.conf /etc/nginx/conf.d/
+COPY nginx.conf /etc/nginx/
+COPY custom_log_format.json /etc/nginx/
 
 # Install NGINX Plus
 RUN set -ex \
@@ -40,9 +41,10 @@ RUN set -ex \
     gpg --keyserver "$server" --recv-keys "0x$NGINX_GPGKEY" && found=yes && break; \
   done; \
   test -z "$found" && echo >&2 "error: failed to fetch GPG key $NGINX_GPGKEY" && exit 1; \
+  wget -P /etc/yum.repos.d https://cs.nginx.com/static/files/dependencies.repo &&\
   wget -P /etc/yum.repos.d https://cs.nginx.com/static/files/nginx-plus-7.4.repo \
   # NGINX Javascript module needed for APIM
-  && yum update && yum -y install nginx-plus nginx-plus-module-njs  \
+  && yum update && yum -y install nginx-plus nginx-plus-module-njs app-protect \
   # Install Controller Agent
   && curl -k -sS -L ${CONTROLLER_URL}/install/controller/ > install.sh \
   && sed -i 's/^assume_yes=""/assume_yes="-y"/' install.sh \
